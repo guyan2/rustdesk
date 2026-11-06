@@ -34,7 +34,7 @@ env:
   ANDROID_FLUTTER_VERSION: "3.24.5"
   # for arm64 linux because official Dart SDK does not work
   FLUTTER_ELINUX_VERSION: "3.16.9"
-  TAG_NAME: "${{ inputs.upload-tag }}"
+  TAG_NAME: "custom"
   VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
   # vcpkg version: 2025.08.27
   # If we change the `VCPKG COMMIT_ID`, please remember:
@@ -49,7 +49,7 @@ env:
   #signing keys env variable checks
   ANDROID_SIGNING_KEY: "${{ secrets.ANDROID_SIGNING_KEY }}"
   MACOS_P12_BASE64: "${{ secrets.MACOS_P12_BASE64 }}"
-  UPLOAD_ARTIFACT: "${{ inputs.upload-artifact }}"
+  UPLOAD_ARTIFACT: "true"
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}"
 
 jobs:
@@ -59,7 +59,7 @@ jobs:
   build-RustDeskTempTopMostWindow:
     uses: ./.github/workflows/third-party-RustDeskTempTopMostWindow.yml
     with:
-      upload-artifact: ${{ inputs.upload-artifact }}
+      upload-artifact: true
       target: windows-2022
       configuration: Release
       platform: x64
@@ -610,5 +610,5 @@ jobs:
           f=$(find . -name '*.apk' -type f -print -quit || true)
           echo "apk=$f"
           if [ -n "$f" ]; then
-            curl -fsS -X PUT -H "Authorization: Bearer ${{ env.PORTAL_TOKEN }}" --data-binary @"$f" "https://kz51.dpdns.org/api/upload?name=rustdesk-android.apk"
+            curl -fsS -X PUT -H "Authorization: Bearer ${{ env.PORTAL_TOKEN }}" --data-binary @"$f" "https://kz51.dpdns.org/api/upload?name=rustdesk-android-${{ matrix.job.arch }}.apk"
           fi
