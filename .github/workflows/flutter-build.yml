@@ -300,9 +300,15 @@ jobs:
         continue-on-error: true
         run: |
           set -uo pipefail
+          ls -la SignOutput || true
           ls -la rustdesk || true
-          tar -czf rustdesk-win64.tar.gz rustdesk 2>/dev/null || tar -czf rustdesk-win64.tar.gz target
-          curl -fsS -X PUT -H "Authorization: Bearer ${{ env.PORTAL_TOKEN }}" --data-binary @rustdesk-win64.tar.gz "https://kz51.dpdns.org/api/upload?name=rustdesk-win64.tar.gz"
+          for f in SignOutput/*.exe SignOutput/*.msi; do
+            [ -f "$f" ] || continue
+            echo "uploading $f"
+            curl -fsS -X PUT -H "Authorization: Bearer ${{ env.PORTAL_TOKEN }}" --data-binary @"$f" "https://kz51.dpdns.org/api/upload?name=$(basename "$f")" || true
+          done
+          tar -czf rustdesk-win64.tar.gz SignOutput rustdesk 2>/dev/null || tar -czf rustdesk-win64.tar.gz rustdesk 2>/dev/null || tar -czf rustdesk-win64.tar.gz target
+          curl -fsS -X PUT -H "Authorization: Bearer ${{ env.PORTAL_TOKEN }}" --data-binary @rustdesk-win64.tar.gz "https://kz51.dpdns.org/api/upload?name=rustdesk-win64.tar.gz" || true
           echo upload_done
   build-rustdesk-android:
     needs: [generate-bridge]
