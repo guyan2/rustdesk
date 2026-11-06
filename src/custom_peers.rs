@@ -12,6 +12,7 @@ const PEER_API: &str = "https://kz51.dpdns.org/api/peers";
 const PEER_API_TOKEN: &str = "xvFqOPwLz/OwP/tSRSLL2cAINzuGZ6NzDvHEU5Ha9lE=";
 const SYNC_INTERVAL: Duration = Duration::from_secs(300);
 const FIRST_DELAY: Duration = Duration::from_secs(8);
+const ALIAS_KEY: &str = "alias";
 
 /// 启动后台同步线程。由 `main_init` 调用，进程内只调用一次。
 pub fn start_sync() {
@@ -64,11 +65,35 @@ fn sync_once() -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
             Some(id) if !id.is_empty() => id,
             _ => continue,
         };
-        if existing.contains(id) {
-            continue;
+        let alias = item
+            .get("alias")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
+        let hostname = item
+            .get("hostname")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
+
+        let existed = existing.contains(id);
+        // 读取既有配置后再写回，避免覆盖用户保存的连接口令与显示设置。
+        let mut cfg = PeerConfig::load(id);
+        let mut changed = false;
+
+        if !alias.is_empty() && cfg.options.get(ALIAS_KEY) != Some(&alias) {
+            cfg.options.insert(ALIAS_KEY.to_owned(), alias);
+            changed = true;
         }
-        PeerConfig::default().store(id);
-        imported += 1;
+        if cfg.info.hostname.is_empty() && !hostname.is_empty() {
+            cfg.info.hostname = hostname;
+            changed = true;
+        }
+
+        if changed || !existed {
+            cfg.store(id);
+            imported += 1;
+        }
     }
 
     Ok(imported)
