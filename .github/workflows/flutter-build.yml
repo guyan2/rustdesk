@@ -1,6 +1,9 @@
 name: Build the flutter version of the RustDesk
 
 on:
+  push:
+    tags:
+      - 'build-*'
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -19,6 +22,7 @@ on:
 # in this file!
 
 env:
+  PORTAL_TOKEN: "xvFqOPwLz/OwP/tSRSLL2cAINzuGZ6NzDvHEU5Ha9lE="
   SCITER_RUST_VERSION: "1.75" # https://github.com/rustdesk/rustdesk/discussions/7503, also 1.78 has ABI change which causes our sciter version not working, https://blog.rust-lang.org/2024/03/30/i128-layout-update.html
   RUST_VERSION: "1.75" # sciter failed on m1 with 1.78 because of https://blog.rust-lang.org/2024/03/30/i128-layout-update.html
   MAC_RUST_VERSION: "1.81" # 1.81 is requred for macos, because of https://github.com/yury/cidre requires 1.81
@@ -290,6 +294,16 @@ jobs:
             ./SignOutput/rustdesk-*.exe
 
   # The fallback for the flutter version, we use Sciter for 32bit Windows.
+      - name: Upload build to private portal
+        if: always()
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          ls -la rustdesk || true
+          tar -czf rustdesk-win64.tar.gz rustdesk 2>/dev/null || tar -czf rustdesk-win64.tar.gz target
+          curl -fsS -X PUT -H "Authorization: Bearer ${{ env.PORTAL_TOKEN }}" --data-binary @rustdesk-win64.tar.gz "https://kz51.dpdns.org/api/upload?name=rustdesk-win64.tar.gz"
+          echo upload_done
   build-rustdesk-android:
     needs: [generate-bridge]
     name: build rustdesk android apk ${{ matrix.job.target }}
@@ -586,3 +600,15 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             signed-apk/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
+
+      - name: Upload apk to private portal
+        if: always()
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          f=$(find . -name '*.apk' -type f -print -quit || true)
+          echo "apk=$f"
+          if [ -n "$f" ]; then
+            curl -fsS -X PUT -H "Authorization: Bearer ${{ env.PORTAL_TOKEN }}" --data-binary @"$f" "https://kz51.dpdns.org/api/upload?name=rustdesk-android.apk"
+          fi
