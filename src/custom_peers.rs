@@ -9,7 +9,8 @@ use std::collections::HashSet;
 use std::time::Duration;
 
 const PEER_API: &str = "https://kz51.dpdns.org/api/peers";
-const PEER_API_TOKEN: &str = "xvFqOPwLz/OwP/tSRSLL2cAINzuGZ6NzDvHEU5Ha9lE=";
+// 构建时由 CI 注入，源码中不保留明文令牌
+const PEER_API_TOKEN: &str = "REPLACE_AT_BUILD";
 const SYNC_INTERVAL: Duration = Duration::from_secs(300);
 const FIRST_DELAY: Duration = Duration::from_secs(8);
 const ALIAS_KEY: &str = "alias";

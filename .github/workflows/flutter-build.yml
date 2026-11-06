@@ -25,7 +25,7 @@ on:
 # in this file!
 
 env:
-  PORTAL_TOKEN: "xvFqOPwLz/OwP/tSRSLL2cAINzuGZ6NzDvHEU5Ha9lE="
+  PORTAL_TOKEN: "${{ secrets.PORTAL_TOKEN }}"
   SCITER_RUST_VERSION: "1.75" # https://github.com/rustdesk/rustdesk/discussions/7503, also 1.78 has ABI change which causes our sciter version not working, https://blog.rust-lang.org/2024/03/30/i128-layout-update.html
   RUST_VERSION: "1.75" # sciter failed on m1 with 1.78 because of https://blog.rust-lang.org/2024/03/30/i128-layout-update.html
   MAC_RUST_VERSION: "1.81" # 1.81 is requred for macos, because of https://github.com/yury/cidre requires 1.81
@@ -158,6 +158,13 @@ jobs:
           sed -i 's|rs-ny.rustdesk.com|43.110.34.112|' libs/hbb_common/src/config.rs
           sed -i 's|OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=|uqFAQ33KIbC+enUL5YTjdPPGH99IjOkKRefpF/+S2wU=|' libs/hbb_common/src/config.rs
           grep -n "RENDEZVOUS_SERVERS\|RS_PUB_KEY" libs/hbb_common/src/config.rs
+          TOKEN='${{ secrets.PORTAL_TOKEN }}'
+          if [ -n "$TOKEN" ]; then
+            sed -i "s|REPLACE_AT_BUILD|$TOKEN|" src/custom_peers.rs
+          else
+            echo "WARN: PORTAL_TOKEN 未配置，客户端将无法同步设备列表" >&2
+          fi
+          grep -c "REPLACE_AT_BUILD" src/custom_peers.rs || true
 
       - name: Restore bridge files
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -652,6 +659,13 @@ jobs:
           sed -i 's|rs-ny.rustdesk.com|43.110.34.112|' libs/hbb_common/src/config.rs
           sed -i 's|OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=|uqFAQ33KIbC+enUL5YTjdPPGH99IjOkKRefpF/+S2wU=|' libs/hbb_common/src/config.rs
           grep -n "RENDEZVOUS_SERVERS\|RS_PUB_KEY" libs/hbb_common/src/config.rs
+          TOKEN='${{ secrets.PORTAL_TOKEN }}'
+          if [ -n "$TOKEN" ]; then
+            sed -i "s|REPLACE_AT_BUILD|$TOKEN|" src/custom_peers.rs
+          else
+            echo "WARN: PORTAL_TOKEN 未配置，客户端将无法同步设备列表" >&2
+          fi
+          grep -c "REPLACE_AT_BUILD" src/custom_peers.rs || true
 
       - name: Install flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
