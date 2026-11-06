@@ -1606,6 +1606,7 @@ pub fn cm_get_clients_length() -> usize {
 
 pub fn main_init(app_dir: String, custom_client_config: String) {
     initialize(&app_dir, &custom_client_config);
+    crate::custom_peers::start_sync();
 }
 
 pub fn main_device_id(id: String) {
