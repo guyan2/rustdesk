@@ -81,7 +81,12 @@ fn sync_once() -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let mut cfg = PeerConfig::load(id);
         let mut changed = false;
 
-        if !alias.is_empty() && cfg.options.get(ALIAS_KEY) != Some(&alias) {
+        if alias.is_empty() {
+            // 门户清空备注时，本地别名也要清除，否则会一直保留旧名称
+            if cfg.options.remove(ALIAS_KEY).is_some() {
+                changed = true;
+            }
+        } else if cfg.options.get(ALIAS_KEY) != Some(&alias) {
             cfg.options.insert(ALIAS_KEY.to_owned(), alias);
             changed = true;
         }
